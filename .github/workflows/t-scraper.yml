@@ -1,0 +1,63 @@
+name: t scraper
+
+on:
+  workflow_dispatch:   # Manual trigger only
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350   # 5h 50min
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: |
+          pip install requests
+
+      - name: Install rclone
+        run: |
+          curl https://rclone.org/install.sh | sudo bash
+          rclone version
+
+      - name: Configure rclone
+        env:
+          RCLONE_CONFIG_CONTENT: ${{ secrets.RCLONE_CONFIG }}
+        run: |
+          mkdir -p ~/.config/rclone
+          echo "$RCLONE_CONFIG_CONTENT" > ~/.config/rclone/rclone.conf
+
+      - name: Sync existing downloads from drive
+        run: |
+          mkdir -p t_downloads
+          rclone sync gdrive:t_downloads ./t_downloads \
+            --transfers=8 \
+            --fast-list \
+            --progress \
+            || echo "Folder empty or first run — continuing"
+
+      - name: Run scraper
+        run: |
+          python t.py
+        env:
+          PYTHONUNBUFFERED: "1"
+
+      - name: Sync downloads to drive
+        if: always()
+        run: |
+          rclone sync ./t_downloads gdrive:t_downloads \
+            --transfers=8 \
+            --fast-list \
+            --progress
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "Total PDFs: $(ls t_downloads/*.pdf 2>/dev/null | wc -l)"
+          echo "Failed IDs CSV exists: $(test -f t_downloads/failed_ids.csv && echo YES || echo NO)"
