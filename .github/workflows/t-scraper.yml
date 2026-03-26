@@ -6,7 +6,7 @@ on:
 jobs:
   scrape:
     runs-on: ubuntu-latest
-    timeout-minutes: 350   # 5h 50min
+    timeout-minutes: 300   # 5h — leaves ~50min for syncing large batches
 
     steps:
       - name: Checkout repository
