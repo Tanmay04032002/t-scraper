@@ -7,7 +7,7 @@ import threading
 
 # ---------------- CONFIG ----------------
 START_ID = 112380
-END_ID = 200000
+END_ID = 170000
 BASE_URL = "https://www.taxsutra.com/download/attachment-conclusion/{}"
 DOWNLOAD_DIR = "t_downloads"          # ← CHANGED from "downloads"
 
